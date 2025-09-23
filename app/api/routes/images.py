@@ -12,6 +12,9 @@ from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼�
 
 router = APIRouter()
 
+# Colab AI 검색을 위한 환경변수
+COLAB_BASE_URL = os.getenv("COLAB_BASE_URL")
+
 # 이미지 디렉토리 경로
 IMAGES_DIR = Path(__file__).parent.parent.parent / "img_search" / "only_product_images"
 
@@ -42,6 +45,40 @@ def _format_response(images: list, query_original: str, query_used: str) -> dict
         "images": images,
         "totalCount": len(images),
     }
+
+async def _colab_ai_search(original_q: str, limit: int) -> dict:
+    """Colab AI 검색 함수 (images_v1.py와 동일)"""
+    try:
+        import httpx
+        
+        #  한국어 → 영어 직역
+        base_query = translate_fashion_query_ko2en(original_q)
+        
+        #  Colab LLM 호출
+        query_used = base_query
+        async with httpx.AsyncClient(timeout=20) as client:
+            res = await client.post(
+                f"{COLAB_BASE_URL}/fashion-query",
+                json={"query": original_q, "base_query": base_query},
+            )
+        if res.status_code == 200:
+            colab_data = res.json()
+            query_used = colab_data.get("query_used", base_query).strip()
+        
+        
+        query_used = " ".join(query_used.split()[:10])
+        
+        print(f"[Colab AI] original='{original_q}' | used='{query_used}'")
+        
+        # CLIP 검색
+        result = await generate_image(query_used, limit)
+        images = result.get("images", [])[:limit]
+        
+        return _format_response(images, original_q, query_used)
+        
+    except Exception as e:
+        print(f"Colab AI 검색 오류: {e}")
+        raise
 
 
 # 라우트
@@ -192,30 +229,40 @@ async def download_image(filename: str):
 
 @router.get("/search")
 async def search_images(q: str, limit: int = 9):
-    """자연어 검색 API (한국어 → 영어 변환 + 최대 9개)"""
+    """강화된 폴백 시스템: 1순위 Colab AI → 2순위 CLIP 검색"""
     try:
         limit = _clamp_limit(limit)
         original_q = (q or "").strip()
+        if not original_q:
+            raise HTTPException(status_code=400, detail="검색어가 필요합니다.")
+
+        print(f"[검색 시작] 쿼리: {original_q}, 제한: {limit}")
+
+        # 1순위: Colab AI 검색
+        if COLAB_BASE_URL:
+            try:
+                print(f"[1순위] Colab AI 검색 시도: {original_q}")
+                result = await _colab_ai_search(original_q, limit)
+                if result and result.get("images"):
+                    print(f"[1순위] Colab AI 검색 성공: {len(result['images'])}개")
+                    return result
+            except Exception as e:
+                print(f"[1순위] Colab AI 검색 실패: {e}")
+
+        # 2순위: CLIP 검색
+        print(f"[2순위] CLIP 검색 시도: {original_q}")
         query_used = translate_fashion_query_ko2en(original_q)
-
-        print(f"[ImageSearch] original='{original_q}' | used='{query_used}' | limit={limit}")
-
-        # AI 검색
         result = await generate_image(query_used, limit)
-
-        # generate_image가 limit을 무시하는 경우 대비
-        images = result.get("images", [])[:limit]
-
-        return _format_response(images, original_q, query_used)
+        
+        if result and result.get("images"):
+            images = result.get("images", [])[:limit]
+            print(f"[2순위] CLIP 검색 성공: {len(images)}개")
+            return _format_response(images, original_q, query_used)
+        else:
+            raise HTTPException(status_code=500, detail="CLIP 검색 결과가 없습니다.")
 
     except Exception as e:
-        print(f"AI 검색 실패: {e}")
-        try:
-            # Fallback
-            fallback = await list_images(query=q, limit=limit)
-            return fallback
-        except Exception:
-            raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
 
 
 @router.post("/search-by-image")

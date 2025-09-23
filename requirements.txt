@@ -2,6 +2,7 @@
 fastapi==0.116.2
 uvicorn==0.36.0
 starlette==0.48.0
+httpx>=0.24.0
 
 # Database
 pymongo==4.15.1
