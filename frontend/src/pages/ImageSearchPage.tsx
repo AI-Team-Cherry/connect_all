@@ -215,11 +215,25 @@ const ImageSearchPage: React.FC = () => {
     }
   };
 
+  const handleClearText = () => {
+    setQuery('');
+    // 검색 결과도 초기화
+    setResult(null);
+    setHasSearched(false);
+    setSelectedImage(null);
+    setError(null);
+  };
+
   const handleClearImage = () => {
     setUploadedImage(null);
     setUploadedImagePreview(null);
     setSearchMode('text');
     setSeparatedImages([]);
+    // 검색 결과도 초기화
+    setResult(null);
+    setHasSearched(false);
+    setSelectedImage(null);
+    setError(null);
   };
 
   const handleModeSwitch = (mode: 'text' | 'image') => {
@@ -427,7 +441,7 @@ const ImageSearchPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={searchMode === 'text' ? () => setQuery('') : handleClearImage}
+                  onClick={searchMode === 'text' ? handleClearText : handleClearImage}
                   disabled={isLoading}
                 >
                   초기화
