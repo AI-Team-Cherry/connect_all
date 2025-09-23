@@ -1,0 +1,101 @@
+cloth-segmentation 설치 가이드
+=====================================
+
+1. 시스템 요구사항
+------------------
+- Python 3.7 이상
+- PyTorch 1.8 이상
+- CUDA (GPU 사용 시, 선택사항)
+- 최소 4GB RAM 권장
+
+2. 기본 설치
+-------------
+2.1. Git 클론
+git clone https://github.com/levihsu/OOTDiffusion.git
+cd OOTDiffusion
+
+2.2. 가상환경 생성 (권장)
+python -m venv cloth_seg_env
+# Windows
+cloth_seg_env\Scripts\activate
+# Linux/Mac
+source cloth_seg_env/bin/activate
+
+2.3. 의존성 설치
+pip install torch torchvision torchaudio
+pip install opencv-python
+pip install pillow
+pip install numpy
+pip install scipy
+pip install scikit-image
+
+3. 모델 파일 다운로드
+---------------------
+3.1. 사전 훈련된 모델 다운로드
+- cloth_segm_u2net_latest.pth 파일을 trained_checkpoint/ 폴더에 저장
+- 모델 파일 크기: 약 176MB
+
+3.2. 모델 파일 위치 확인
+cloth-segmentation/
+└── trained_checkpoint/
+    └── cloth_segm_u2net_latest.pth
+
+4. 설치 검증
+-------------
+4.1. 기본 테스트
+python infer.py --input_path input_images/ --output_path output_images/
+
+4.2. Python에서 직접 사용
+```python
+import torch
+from networks.u2net import U2NET
+from PIL import Image
+import numpy as np
+
+# 모델 로드
+model = U2NET(3, 1)
+model.load_state_dict(torch.load('trained_checkpoint/cloth_segm_u2net_latest.pth', map_location='cpu'))
+model.eval()
+
+# 이미지 처리
+image = Image.open('test_image.jpg')
+# ... 처리 로직
+```
+
+5. 현재 프로젝트에서의 사용법
+-------------------------------
+5.1. 모델 경로 설정
+model_path = "cloth-segmentation/trained_checkpoint/cloth_segm_u2net_latest.pth"
+
+5.2. ClothSegmentationModel 클래스 사용
+from app.models.cloth_segmentation_model import ClothSegmentationModel
+
+model = ClothSegmentationModel()
+clothing_regions = model.get_clothing_regions(image)
+
+6. 문제 해결
+-------------
+6.1. 일반적인 오류
+- CUDA 관련 오류: map_location='cpu' 사용
+- 메모리 부족: 배치 크기 줄이기
+- 모델 로드 실패: 모델 파일 경로 확인
+
+6.2. 성능 최적화
+- GPU 사용 시: device='cuda' 설정
+- CPU 사용 시: device='cpu' 설정
+- 배치 처리로 속도 향상
+
+7. 추가 정보
+-------------
+- 원본 저장소: https://github.com/levihsu/OOTDiffusion
+- 모델 아키텍처: U2-Net
+- 지원 형식: JPEG, PNG
+- 출력: 마스크 이미지 (0-255 범위)
+
+8. 주의사항
+-----------
+- 모델 파일은 반드시 trained_checkpoint/ 폴더에 위치해야 함
+- 이미지 전처리 시 RGB 형식으로 변환 필요
+- 메모리 사용량이 클 수 있으므로 적절한 배치 크기 설정 권장
+
+
