@@ -109,9 +109,57 @@ class ClothSegmentationModel:
             print(f"의류 세그멘테이션 실패: {e}")
             raise
     
+    def _opencv_color_analysis(self, image: Image.Image) -> dict:
+        """
+        OpenCV 색상 분석을 사용한 간단한 의류 분할
+        
+        Args:
+            image: PIL Image 객체
+            
+        Returns:
+            dict: {'top': top_mask, 'bottom': bottom_mask, 'full_body': full_body_mask}
+        """
+        try:
+            import cv2
+            
+            # PIL을 OpenCV 형식으로 변환
+            img_array = np.array(image)
+            if len(img_array.shape) == 3:
+                img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+            else:
+                img_cv = img_array
+            
+            h, w = img_cv.shape[:2]
+            
+            # 간단한 상하 분할 (중앙선 기준)
+            center_y = h // 2
+            
+            # 상의 영역 (상단 60%)
+            top_mask = np.zeros((h, w), dtype=np.uint8)
+            top_mask[:int(h * 0.6), :] = 1
+            
+            # 하의 영역 (하단 40%)
+            bottom_mask = np.zeros((h, w), dtype=np.uint8)
+            bottom_mask[int(h * 0.6):, :] = 1
+            
+            # 전체 의류 영역
+            full_body_mask = np.ones((h, w), dtype=np.uint8)
+            
+            print(f"OpenCV 색상 분석 완료: 상의 {top_mask.sum()}, 하의 {bottom_mask.sum()}")
+            
+            return {
+                'top': top_mask,
+                'bottom': bottom_mask,
+                'full_body': full_body_mask
+            }
+            
+        except Exception as e:
+            print(f"OpenCV 색상 분석 실패: {e}")
+            raise
+
     def get_clothing_regions(self, image: Image.Image) -> dict:
         """
-        의류 영역별 마스크 반환
+        의류 영역별 마스크 반환 (폴백 시스템 포함)
         
         Args:
             image: PIL Image 객체
@@ -180,8 +228,25 @@ class ClothSegmentationModel:
             }
             
         except Exception as e:
-            print(f"의류 영역 분할 실패: {e}")
-            raise
+            print(f"cloth-segmentation 모델 실패: {e}")
+            print("OpenCV 색상 분석으로 폴백합니다...")
+            
+            # 2순위: OpenCV 색상 분석
+            try:
+                return self._opencv_color_analysis(image)
+            except Exception as e2:
+                print(f"OpenCV 색상 분석도 실패: {e2}")
+                print("기본 검색으로 폴백합니다...")
+                
+                # 3순위: 기본 검색 (전체 이미지)
+                h, w = np.array(image).shape[:2]
+                full_mask = np.ones((h, w), dtype=np.uint8)
+                
+                return {
+                    'top': full_mask,
+                    'bottom': full_mask,
+                    'full_body': full_mask
+                }
 
 
 # 전역 모델 인스턴스

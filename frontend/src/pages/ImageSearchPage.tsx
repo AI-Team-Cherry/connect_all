@@ -90,7 +90,6 @@ const ImageSearchPage: React.FC = () => {
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  // 고급 검색 옵션 제거 - 항상 상의/하의 분리 검색
   const [modalImage, setModalImage] = useState<ImageResult | null>(null);
   const [separatedImages, setSeparatedImages] = useState<any[]>([]);
 
@@ -162,8 +161,13 @@ const ImageSearchPage: React.FC = () => {
         localStorage.setItem('recentImageSearches', JSON.stringify(updatedSearches));
         setQuery('');
       } else {
-        // 이미지 검색 - 항상 고급 검색 (상의/하의 분리)
-        searchResult = await searchImagesByFileAdvanced(uploadedImage!, 9, 'all');
+        // 이미지 검색 (자동으로 의류 분리 포함)
+        searchResult = await searchImagesByFileAdvanced(uploadedImage!);
+        
+        // 분리된 이미지 정보 저장
+        if (searchResult.separated_images) {
+          setSeparatedImages(searchResult.separated_images);
+        }
 
         // 최근 검색 목록 업데이트 (이미지 이름 사용)
         const newSearch = {
@@ -182,7 +186,6 @@ const ImageSearchPage: React.FC = () => {
       }
 
       setResult(searchResult);
-      setSeparatedImages(searchResult.separated_images || []);
       setProgress(100);
       setHasSearched(true);
     } catch (error: any) {
@@ -216,10 +219,7 @@ const ImageSearchPage: React.FC = () => {
     setUploadedImage(null);
     setUploadedImagePreview(null);
     setSearchMode('text');
-    // 검색 결과도 함께 초기화
-    setResult(null);
     setSeparatedImages([]);
-    setHasSearched(false);
   };
 
   const handleModeSwitch = (mode: 'text' | 'image') => {
@@ -228,6 +228,7 @@ const ImageSearchPage: React.FC = () => {
     if (mode === 'text') {
       setUploadedImage(null);
       setUploadedImagePreview(null);
+      setSeparatedImages([]);
     } else {
       setQuery('');
     }
@@ -399,6 +400,7 @@ const ImageSearchPage: React.FC = () => {
                 </Box>
               )}
 
+
               {isLoading && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -408,23 +410,6 @@ const ImageSearchPage: React.FC = () => {
                 </Box>
               )}
 
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-                {/* 이미지 검색 시 자동 상의/하의 분리 안내 */}
-                {searchMode === 'image' && uploadedImage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Chip 
-                      label="상의/하의 자동 분리 검색" 
-                      size="small" 
-                      color="primary" 
-                      sx={{ fontSize: '0.7rem', height: '24px' }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      상의 5장 + 하의 5장으로 검색됩니다
-                    </Typography>
-                  </Box>
-                )}
-                
-                {/* 검색 버튼들 */}
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="contained"
@@ -437,21 +422,16 @@ const ImageSearchPage: React.FC = () => {
                   }
                   sx={{ px: 4 }}
                 >
-                    {isLoading ? '검색 중...' : '검색 시작'}
+                  {isLoading ? '검색 중...' : '검색 시작'}
                 </Button>
                 <Button
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={searchMode === 'text' ? () => {
-                    setQuery('');
-                    setResult(null);
-                    setHasSearched(false);
-                  } : handleClearImage}
+                  onClick={searchMode === 'text' ? () => setQuery('') : handleClearImage}
                   disabled={isLoading}
                 >
                   초기화
                 </Button>
-                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -487,60 +467,6 @@ const ImageSearchPage: React.FC = () => {
             </Alert>
           )}
 
-          {/* 분리된 이미지 표시 (고급 검색 결과) */}
-          {separatedImages.length > 0 && (
-            <Fade in={true}>
-              <Card sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <AutoAwesome sx={{ mr: 1 }} />
-                    분리된 의류 영역
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {separatedImages.map((separatedImg, index) => (
-                      <Grid item xs={12} sm={6} md={4} key={index}>
-                        <Card variant="outlined">
-                          <Box sx={{ position: 'relative' }}>
-                            <img
-                              src={`http://localhost:8001${separatedImg.url}`}
-                              alt={separatedImg.description}
-                              style={{
-                                width: '100%',
-                                height: '200px',
-                                objectFit: 'cover',
-                                borderRadius: '4px 4px 0 0'
-                              }}
-                            />
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 8,
-                                right: 8,
-                                bgcolor: 'rgba(0,0,0,0.7)',
-                                color: 'white',
-                                px: 1,
-                                py: 0.5,
-                                borderRadius: 1,
-                                fontSize: '0.75rem'
-                              }}
-                            >
-                              {separatedImg.type}
-                            </Box>
-                          </Box>
-                          <CardContent sx={{ p: 1.5 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              {separatedImg.description}
-                            </Typography>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Fade>
-          )}
-
           {/* 검색 결과 */}
           {result && hasSearched && (
             <Fade in={true}>
@@ -551,36 +477,84 @@ const ImageSearchPage: React.FC = () => {
                       검색 결과 ({result.totalCount}개, {(result.searchTime || 0).toFixed(2)}초)
                     </Typography>
                   </Box>
+
+                  {/* 의류 분리 결과 - 이미지 검색일 때만 표시 */}
+                  {searchMode === 'image' && separatedImages.length > 0 && (
+                    <Box sx={{ mb: 4 }}>
+                      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AutoAwesome sx={{ mr: 1, color: 'primary.main' }} />
+                        AI 의류 분리 결과
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {separatedImages.map((img, index) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Card sx={{ height: '100%' }}>
+                              <Box sx={{ position: 'relative' }}>
+                                <img
+                                  src={img.url}
+                                  alt={img.type}
+                                  style={{
+                                    width: '100%',
+                                    height: '200px',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    left: 8,
+                                    bgcolor: img.type === '상의' ? 'primary.main' : 'secondary.main',
+                                    color: 'white',
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  {img.type}
+                                </Box>
+                              </Box>
+                              <CardContent sx={{ p: 1.5 }}>
+                                <Typography variant="body2" color="textSecondary" textAlign="center">
+                                  {img.type} 영역
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  )}
                   
-                  <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={20}>
+                  <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={16}>
                     {result.images.map((image) => (
-                      <ImageListItem 
-                        key={image.id}
-                        sx={{ 
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s',
-                          '&:hover': {
+                        <ImageListItem 
+                          key={image.id}
+                          sx={{ 
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            '&:hover': {
                               transform: 'scale(1.02)',
                               boxShadow: 2,
-                          },
+                            },
                             height: 'auto',
-                            minHeight: '400px'  // 텍스트 검색과 동일한 최소 높이
-                        }}
-                        onClick={() => handleImageClick(image)}
-                      >
-                        <Box sx={{ position: 'relative' }}>
-                        <img
-                          src={image.url}
-                          alt={image.title}
-                          loading="lazy"
-                          style={{
-                            width: '100%',
-                            height: '240px',  // 텍스트 검색과 동일한 높이
-                            objectFit: 'cover',  // 텍스트 검색과 동일하게
-                            imageRendering: 'crisp-edges',  // 이미지 렌더링 품질 향상
-                            backgroundColor: '#f5f5f5'  // 배경색 추가 (이미지 영역 명확화)
+                            minHeight: '380px'
                           }}
-                          onError={(e) => {
+                          onClick={() => handleImageClick(image)}
+                        >
+                        <Box sx={{ position: 'relative' }}>
+                          <img
+                            src={image.url}
+                            alt={image.title}
+                            loading="lazy"
+                            style={{
+                              width: '100%',
+                              height: '220px',
+                              objectFit: 'cover'
+                            }}
+                            onError={(e) => {
                               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x250?text=Image+Not+Found';
                             }}
                           />
@@ -610,24 +584,6 @@ const ImageSearchPage: React.FC = () => {
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, lineHeight: 1.2 }}>
                             {image.product_name || image.title}
                           </Typography>
-                          
-                          {/* 고급 검색 결과 - 카테고리 정보 표시 */}
-                          {image.clothing_category && (
-                            <Box sx={{ display: 'flex', gap: 0.5, mb: 1, alignItems: 'center' }}>
-                              <Chip 
-                                label={`${image.clothing_category}`}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ fontSize: '0.7rem', height: 20 }}
-                              />
-                              {image.category_confidence && (
-                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                                  ({Math.round(image.category_confidence * 100)}%)
-                                </Typography>
-                              )}
-                            </Box>
-                          )}
                           
                           {/* 기본 정보 - 한 줄로 정리 */}
                           <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
