@@ -2,7 +2,6 @@
 fastapi==0.116.2
 uvicorn==0.36.0
 starlette==0.48.0
-httpx>=0.24.0
 
 # Database
 pymongo==4.15.1
@@ -18,17 +17,17 @@ python-multipart==0.0.20
 # Image Processing & Computer Vision
 pillow==11.0.0
 opencv-python==4.8.1.78
-# scikit-image==0.21.0  # 컴파일러 문제로 임시 주석 처리
 
 # Machine Learning & AI
-torch==2.6.0
-torchvision==0.21.0
-# transformers==4.36.2  # tokenizers 의존성으로 인한 Rust 컴파일러 문제로 임시 주석 처리
-faiss-cpu==1.12.0
+torch==2.1.0
+torchvision==0.16.0
+transformers==4.35.2
+tokenizers==0.15.2
+faiss-cpu==1.7.4
 scikit-learn==1.7.2
 
 # Data Processing
-numpy==1.24.4
+numpy==1.26.4
 pandas==2.3.2
 scipy==1.16.2
 
@@ -100,7 +99,6 @@ six==1.17.0
 sniffio==1.3.1
 sympy==1.13.1
 threadpoolctl==3.6.0
-# tokenizers==0.15.2  # Rust 컴파일러 문제로 임시 주석 처리
 typing-inspection==0.4.1
 typing_extensions==4.15.0
 tzdata==2025.2
@@ -110,5 +108,7 @@ xxhash==3.5.0
 zstandard==0.25.0
 
 # 추가 패키지 (게시판 및 AI 채팅용)
+# python -Xutf8 -m pip install -r requirements.txt
+
 sentence-transformers==2.7.0
 google-generativeai==0.8.3
