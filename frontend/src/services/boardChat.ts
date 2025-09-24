@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 
-const BASE_URL =
-  (process.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/+$/, "");
-
+const BASE_URL = (
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8080"
+).replace(/\/+$/, "");
 
 export type Department = "MD" | "CS" | "SW" | string;
 
@@ -20,9 +20,15 @@ export async function sendBoardChat(
   department?: Department
 ): Promise<BoardChatResult> {
   try {
+    // ✅ department 있을 때만 payload에 추가
+    const payload: any = { question };
+    if (department) {
+      payload.department = department;
+    }
+
     const res = await axios.post<BoardChatResult>(
       `${BASE_URL}/llm/board-chat`,
-      { question, department },
+      payload,
       {
         headers: { "Content-Type": "application/json" },
         timeout: 1500000,
