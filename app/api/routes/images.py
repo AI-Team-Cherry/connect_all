@@ -387,7 +387,7 @@ async def search_images_by_file_advanced(
         separated_images = search_response.get("separated_images", [])
         search_type = search_response.get("search_type", clothing_type)
         
-        # 텍스트 검색과 동일한 응답 구조로 변환
+        # 아이템 찾기과 동일한 응답 구조로 변환
         formatted_images = []
         for result in search_results:
             formatted_images.append({
@@ -398,7 +398,7 @@ async def search_images_by_file_advanced(
                 "description": f"고급 AI 이미지 검색 결과",
                 "tags": ["고급검색", "인체분할", "카테고리분류"],
                 "relevance": float(result.get("similarity", 0.0)),
-                # 텍스트 검색과 동일한 구조
+                # 아이템 찾기과 동일한 구조
                 "similarity": float(result.get("similarity", 0.0)),
                 "product_name": str(result.get("product_name", "")),
                 "price": int(result.get("price", 0)),

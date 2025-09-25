@@ -149,7 +149,7 @@ const ImageSearchPage: React.FC = () => {
       let searchResult;
 
       if (searchMode === "text") {
-        // 텍스트 검색
+        // 아이템 찾기
         searchResult = await searchImages(query.trim());
 
         // 최근 검색 목록 업데이트
@@ -311,7 +311,7 @@ const ImageSearchPage: React.FC = () => {
           sx={{ display: "flex", alignItems: "center" }}
         >
           <ImageSearch sx={{ mr: 2, color: "primary.main" }} />
-          이미지 찾기
+          아이템 찾기
         </Typography>
         <Typography variant="body1" color="textSecondary">
           {searchMode === "text"
@@ -342,20 +342,20 @@ const ImageSearchPage: React.FC = () => {
               >
                 <Tab
                   value="text"
-                  label="텍스트 검색"
+                  label="자연어 검색"
                   icon={<ImageSearch />}
                   iconPosition="start"
                 />
                 <Tab
                   value="image"
-                  label="옷 분석 검색"
+                  label="이미지 검색"
                   icon={<PhotoCamera />}
                   iconPosition="start"
                 />
               </Tabs>
 
               {searchMode === "text" ? (
-                // 텍스트 검색 입력
+                // 아이템 찾기 입력
                 <TextField
                   fullWidth
                   multiline
@@ -494,7 +494,7 @@ const ImageSearchPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* 추천 검색어 - 텍스트 검색 모드일 때만 표시 */}
+          {/* 추천 검색어 - 아이템 찾기 모드일 때만 표시 */}
           {searchMode === "text" && (
             <Card sx={{ mb: 3 }}>
               <CardContent>

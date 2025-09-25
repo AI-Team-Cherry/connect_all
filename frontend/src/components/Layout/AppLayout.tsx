@@ -49,7 +49,7 @@ const menuItems: MenuItemType[] = [
   // { text: "대시보드", icon: <Dashboard />, path: "/dashboard" },
   { text: "데이터 분석", icon: <Psychology />, path: "/analysis" },
   { text: "공유 데이터", icon: <Share />, path: "/shared" },
-  { text: "이미지 찾기", icon: <ImageSearch />, path: "/image-search" },
+  { text: "아이템 찾기", icon: <ImageSearch />, path: "/image-search" },
   { text: "AI 패션 모델링", icon: <AutoAwesome />, path: "/fashion-modeling" },
   { text: "부서 워크 보드", icon: <Forum />, path: "/boards/MD" },
   { text: "마이페이지", icon: <Person />, path: "/mypage" },
