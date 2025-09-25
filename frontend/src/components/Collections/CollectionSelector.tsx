@@ -36,7 +36,7 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
   useEffect(() => {
     loadCollections();
   }, []);
-
+/*
   const loadCollections = async () => {
     setLoading(true);
     setError(null);
@@ -61,6 +61,44 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
       setLoading(false);
     }
   };
+*/
+const loadCollections = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const collectionList = await getCollections(); // ["orders", "users", ...]
+    const infos: Record<string, CollectionInfo> = {};
+    const validCollections: string[] = [];
+
+    for (const collection of collectionList) {
+      try {
+        const info = await getCollectionInfo(collection);
+        if (info.documentCount > 0) {
+          validCollections.push(collection);
+          infos[collection] = info;
+        }
+      } catch (error) {
+        console.warn(`컬렉션 ${collection} 정보 로드 실패:`, error);
+      }
+    }
+
+    // 🔹 product를 맨 앞으로
+    const sorted = validCollections.sort((a, b) => {
+      if (a === "product") return -1;
+      if (b === "product") return 1;
+      return a.localeCompare(b);
+    });
+
+    setCollections(sorted);
+    setCollectionInfos(infos);
+  } catch (error: any) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const handleCollectionClick = (collection: string) => {
     if (selectedCollections.includes(collection)) {
